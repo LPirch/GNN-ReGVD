@@ -1,7 +1,8 @@
-torch==1.9.0
-numpy
-tensorboardX
-scipy
-tqdm
+-f https://download.pytorch.org/whl/torch_stable.html
+torch==1.9.0+cu111
+numpy==1.21.6
+tensorboardX==2.6.2.2
+scipy==1.7.3
+tqdm==4.67.1
 transformers==4.4.0
 packaging==21.3
