@@ -1,0 +1,24 @@
+services:
+  regvd:
+    container_name: regvd
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/regvd
+      - regvd-raw:/regvd/data/raw
+      - regvd-results:/regvd/data/results
+    ipc: host
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 4
+    #           capabilities: [gpu]
+
+volumes:
+  regvd-raw:
+    external: true
+  regvd-results:
+    external: true
