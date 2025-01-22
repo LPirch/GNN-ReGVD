@@ -249,7 +249,7 @@ def train(args, train_dataset, model, tokenizer):
                 if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
                     
                     if args.local_rank == -1 and args.evaluate_during_training:  # Only evaluate when single GPU otherwise metrics may not average well
-                        results = evaluate(args, model, tokenizer,eval_when_training=True)
+                        results = evaluate(args, model, args.pred_csv,tokenizer,eval_when_training=True)
                         for key, value in results.items():
                             logger.info("  %s = %s", key, round(value,4))                    
                         # Save model checkpoint
@@ -272,7 +272,7 @@ def train(args, train_dataset, model, tokenizer):
         logger.info("epoch {} loss {}".format(idx, avg_loss))
                         
 
-def evaluate(args, model, tokenizer,eval_when_training=False):
+def evaluate(args, model, pred_csv, tokenizer,eval_when_training=False):
     # Loop to handle MNLI double evaluation (matched, mis-matched)
     eval_output_dir = args.output_dir
 
@@ -314,11 +314,13 @@ def evaluate(args, model, tokenizer,eval_when_training=False):
     eval_acc=np.mean(labels==preds)
     eval_loss = eval_loss / nb_eval_steps
     perplexity = torch.tensor(eval_loss)
-            
     result = {
         "eval_loss": float(perplexity),
         "eval_acc":round(eval_acc,4),
     }
+    with open(pred_csv, 'w') as f:
+        for score, label in zip(logits[:,0], labels):
+            f.write(f"{score.item():.4f},{label.item()}\n")
     return result
 
 def test(args, model, tokenizer):
@@ -485,6 +487,8 @@ def main():
     parser.add_argument("--training_percent", default=1., type=float, help="percet of training sample")
     parser.add_argument("--alpha_weight", default=1., type=float, help="percet of training sample")
 
+    parser.add_argument("--pred_csv", default="predictions.csv", type=str, help="predictions csv file")
+
 
     args = parser.parse_args()
 
@@ -591,7 +595,7 @@ def main():
             output_dir = os.path.join(args.output_dir, '{}'.format(checkpoint_prefix))  
             model.load_state_dict(torch.load(output_dir))      
             model.to(args.device)
-            result=evaluate(args, model, tokenizer)
+            result=evaluate(args, model, args.pred_csv,tokenizer)
             logger.info("***** Eval results *****")
             for key in sorted(result.keys()):
                 logger.info("  %s = %s", key, str(round(result[key],4)))
